@@ -1,0 +1,118 @@
+import java.io.*;
+import java.net.*;
+
+public class RARP
+{
+    public static void main(String args[])
+    {
+        new RARPServer();
+        new RARPClient();
+    }
+}
+
+class RARPServer extends Thread
+{
+    RARPServer()
+    {
+        start();
+    }
+
+    public void run()
+    {
+        try
+        {
+            DatagramSocket server = new DatagramSocket(1309);
+            System.out.println("RARP Server is running...");
+
+            byte[] receiveByte = new byte[1024];
+            byte[] sendByte = new byte[1024];
+
+            DatagramPacket receiver =
+                    new DatagramPacket(receiveByte, receiveByte.length);
+
+            server.receive(receiver);
+
+            String macAddress = new String(receiver.getData()).trim();
+
+            InetAddress addr = receiver.getAddress();
+            int port = receiver.getPort();
+
+            String ip[] = {"10.0.3.186"};
+            String mac[] = {"D4:3D:7E:12:A3:D9"};
+
+            String result = "MAC Address not found";
+
+            for(int i = 0; i < mac.length; i++)
+            {
+                if(macAddress.equals(mac[i]))
+                {
+                    result = ip[i];
+                    break;
+                }
+            }
+
+            sendByte = result.getBytes();
+
+            DatagramPacket sender =
+                    new DatagramPacket(sendByte, sendByte.length, addr, port);
+
+            server.send(sender);
+
+            server.close();
+        }
+        catch(Exception e)
+        {
+            System.out.println(e);
+        }
+    }
+}
+
+class RARPClient extends Thread
+{
+    RARPClient()
+    {
+        start();
+    }
+
+    public void run()
+    {
+        try
+        {
+            Thread.sleep(1000);
+
+            DatagramSocket client = new DatagramSocket();
+            InetAddress addr = InetAddress.getByName("127.0.0.1");
+
+            byte[] sendByte = new byte[1024];
+            byte[] receiveByte = new byte[1024];
+
+            BufferedReader in =
+                    new BufferedReader(new InputStreamReader(System.in));
+
+            System.out.print("Enter the Physical Address (MAC): ");
+            String mac = in.readLine();
+
+            sendByte = mac.getBytes();
+
+            DatagramPacket sender =
+                    new DatagramPacket(sendByte, sendByte.length, addr, 1309);
+
+            client.send(sender);
+
+            DatagramPacket receiver =
+                    new DatagramPacket(receiveByte, receiveByte.length);
+
+            client.receive(receiver);
+
+            String ip = new String(receiver.getData()).trim();
+
+            System.out.println("The Logical Address (IP) is: " + ip);
+
+            client.close();
+        }
+        catch(Exception e)
+        {
+            System.out.println(e);
+        }
+    }
+}
